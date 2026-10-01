@@ -1,0 +1,951 @@
+#+tile: Emacs Configuration
+
+Emacs is cental to my cpmputing wirkflow
+
+- Early Init Configuration
+  #+begin_src emacs-lisp :tangle ~/.config/emacs/early-init.el :mkdirp yes
+    (setq user-emacs-directory
+      (expand-file-name "~/.cache/emacs/"))
+  #+end_src
+
+- Establish Configuration Variables
+  #+begin_src emacs-lisp :tangle ~/.config/emacs/init.el :mkdirp yes
+      (defvar dh/fixed-pitch-font "JetBrains Mono"
+        "The font used for `default' and `fixed-pitch' faces.")
+
+      (defvar dh/fixed-pitch-size 102)
+
+      (defvar dh/variable-pitch-font "JetBrains Mono"
+        "The font used for `variable-pitch' face.")
+
+      (defvar dh/variable-pitch-size 120)
+
+      (defvar dh/org-heading-font "Alatsi"
+        "The font used for Org Mode headings.")
+
+      (defvar dh/theme 'doom-molokai
+        "The Doom theme to use.")
+  #+end_src
+
+- Package Manager Setup
+
+  #+begin_src emacs-lisp :tangle ~/.config/emacs/init.el :mkdirp yes
+     (require 'package)
+
+(setq package-archives
+      '(("gnu"    . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+        ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
+        ("melpa"  . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
+
+(setq package-user-dir
+      (expand-file-name "elpa/" user-emacs-directory))
+
+(package-initialize)
+
+(unless (package-installed-p 'use-package)
+  (package-install 'use-package))
+
+(require 'use-package)
+
+(setq use-package-always-ensure t)
+  #+end_src
+  
+- Initialization
+  
+  #+begin_src emacs-lisp :tangle ~/.config/emacs/init.el :mkdirp yes
+    (setq url-history-file
+       (expand-file-name "url/history" user-emacs-directory))
+
+    (add-to-list 'load-path "~/.config/emacs/modules")
+
+    (require 'dh-workflow)
+    (require 'dh-rust)
+    (require 'dh-lsp-bridge)
+    (require 'dh-func)
+  #+end_src
+
+- Keeping the Emacs Folder Clean
+
+  #+begin_src emacs-lisp :tangle ~/.config/emacs/init.el
+  (use-package no-littering
+   :demand t
+   :config
+
+   ;; ========================================
+   ;; Custom
+   ;; ========================================
+
+   ;; 将 Customize 自动生成的配置保存到：
+   ;; ~/.config/emacs/etc/custom.el
+   (setq custom-file
+         (no-littering-expand-etc-file-name "custom.el"))
+
+   ;; 如果 custom.el 存在，则加载它
+   (when (file-exists-p custom-file)
+     (load custom-file t))
+
+
+   ;; ========================================
+   ;; Backup
+   ;; ========================================
+
+   ;; Backup 文件统一保存到：
+   ;; ~/.config/emacs/var/backup/
+   (let ((backup-dir
+          (no-littering-expand-var-file-name "backup/")))
+     (make-directory backup-dir t)
+
+     (setq backup-directory-alist
+           `(("." . ,backup-dir))))
+
+
+   ;; ========================================
+   ;; Auto-save
+   ;; ========================================
+
+   ;; Auto-save 文件统一保存到：
+   ;; ~/.config/emacs/var/auto-save/
+   (let ((auto-save-dir
+          (no-littering-expand-var-file-name "auto-save/")))
+     (make-directory auto-save-dir t)
+
+     (setq auto-save-file-name-transforms
+           `((".*" ,auto-save-dir t)))))
+  #+end_src
+
+- Native Compliation Configuration
+  
+  #+begin_src emacs-lisp :tangle ~/.config/emacs/init.el :mkdirp yes
+    (setq native-comp-async-report-warnings-errors nil)
+
+    (add-to-list 'native-comp-eln-load-path
+                 (expand-file-name "eln-cache/" user-emacs-directory))
+  #+end_src
+
+- Basic User Interface CustomIzation
+ #+begin_src emacs-lisp :tangle ~/.config/emacs/init.el :mkdirp yes
+    ;; 禁止启动欢迎界面
+   (setq inhibit-startup-message t)
+
+   ;; 关闭滚动条、工具栏、tooltip
+   (scroll-bar-mode -1)
+   (tool-bar-mode -1)
+   (tooltip-mode -1)
+
+   ;; 设置 fringe 宽度
+   (set-fringe-mode 10)
+
+   ;; 关闭菜单栏
+   (menu-bar-mode -1)
+
+   ;; 默认文本宽度
+   (setq-default fill-column 80)
+
+   ;; 错误提示使用视觉闪烁
+   (setq visible-bell t)
+
+   ;; 鼠标滚轮设置
+   (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
+   (setq mouse-wheel-progressive-speed nil)
+   (setq mouse-wheel-follow-mouse t)
+   (setq scroll-step 1)
+
+   ;; 禁止 GUI 弹窗
+   (setq use-dialog-box nil)
+
+   (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+
+   ;; 设置窗口透明度
+   (set-frame-parameter (selected-frame)
+                        'alpha-background 93)
+   (add-to-list 'default-frame-alist
+                '(alpha-background . 93))
+
+   ;; 启动时最大化窗口
+   (set-frame-parameter (selected-frame)
+                        'fullscreen 'maximized)
+   (add-to-list 'default-frame-alist
+                '(fullscreen . maximized))
+
+   ;; 默认使用 UTF-8
+   (set-default-coding-systems 'utf-8)
+ #+end_src
+
+  * Set the theme
+   #+begin_src emacs-lisp :tangle ~/.config/emacs/init.el :mkdirp yes
+   (use-package doom-themes
+   :ensure t
+   :custom
+   (doom-themes-enable-bold t)
+   (doom-themes-enable-italic t)
+
+   :config
+   (load-theme dh/theme t)
+   (doom-themes-visual-bell-config)
+   (doom-themes-org-config))
+
+
+ (use-package default-text-scale
+   :ensure t
+   :config
+   (default-text-scale-mode))
+
+
+ ;; 默认字体
+ (set-face-attribute 'default nil
+                     :font dh/fixed-pitch-font
+                     :weight 'normal
+                     :height dh/fixed-pitch-size)
+
+ ;; 等宽字体
+ (set-face-attribute 'fixed-pitch nil
+                     :font dh/fixed-pitch-font
+                     :weight 'light
+                     :height dh/fixed-pitch-size)
+
+ ;; 比例字体
+ (set-face-attribute 'variable-pitch nil
+                     :font dh/variable-pitch-font
+                     :weight 'normal
+                     :height dh/variable-pitch-size)
+
+
+ ;; Mode line 时间
+ (setq display-time-format "%l:%M %p %b %d W%U"
+       display-time-load-average-threshold 0.0)
+
+ (display-time-mode 1)    		    
+   #+end_src
+
+- Vertico, Consult, and Embark
+  #+begin_src emacs-lisp :tangle ~/.config/emacs/init.el :mkdirp yes
+    (use-package project
+      :ensure nil
+
+      :bind
+      (;; 项目文件
+       ("C-x p f" . project-find-file)
+
+       ;; 项目搜索
+       ("C-x p g" . project-find-regexp)
+
+       ;; 项目 buffer
+       ("C-x p b" . project-switch-to-buffer)
+
+       ;; 项目 shell
+       ("C-x p s" . project-shell)
+
+       ;; 项目编译
+       ("C-x p c" . project-compile)))
+
+        (use-package vertico
+          :demand t
+
+          :bind
+          (:map vertico-map
+                ;; C-j：选择下一个候选项
+                ("C-j" . vertico-next)
+
+                ;; C-k：选择上一个候选项
+                ("C-k" . vertico-previous)
+
+                ;; C-f：退出候选选择，接受当前输入
+                ("C-f" . vertico-exit-input)
+
+                :map minibuffer-local-map
+                ;; M-h：目录向上一级
+                ;; 例如：
+                ;; /home/user/project/src/
+                ;;        ↓ M-h
+                ;; /home/user/project/
+                ("M-h" . vertico-directory-up))
+
+          :custom
+          ;; 到达候选列表末尾后继续向下，会回到顶部。
+          ;;
+          ;;   A
+          ;;   B
+          ;;   C
+          ;;   ↓
+          ;;   A
+          (vertico-cycle t)
+
+          :custom-face
+          ;; 当前选中的候选项使用这个背景色。
+          (vertico-current ((t (:background "#3a3f5a"))))
+
+          :config
+          ;; 启用目录补全相关功能。
+          (require 'vertico-directory)
+
+          ;; 开启 Vertico。
+          (vertico-mode))
+
+        ;;; ------------------------------------------------------------
+        ;;; Kind-icon
+        ;;; ------------------------------------------------------------
+        ;;; 给 Corfu 补全候选项增加图标。
+        ;;;
+        ;;; 例如：
+        ;;;
+        ;;;   󰊕 function
+        ;;;   󰀫 variable
+        ;;;   󰈙 file
+        ;;;
+        ;;; 实际图标取决于当前配置和字体。
+        ;;; ------------------------------------------------------------
+
+        (use-package kind-icon
+          :after corfu
+
+          :custom
+          ;; kind-icon 使用 corfu-default 的 face。
+          (kind-icon-default-face 'corfu-default)
+
+          :config
+          ;; 把 kind-icon 添加到 Corfu 的 margin formatter。
+          (add-to-list 'corfu-margin-formatters
+                       #'kind-icon-margin-formatter))
+
+
+        ;;; ------------------------------------------------------------
+        ;;; Orderless
+        ;;; ------------------------------------------------------------
+        ;;; Orderless：
+        ;;;   控制 Emacs completion 的匹配方式。
+        ;;;
+        ;;; 例如候选：
+        ;;;
+        ;;;   project-switch-to-buffer
+        ;;;   project-current
+        ;;;   project-find-file
+        ;;;
+        ;;; 输入：
+        ;;;
+        ;;;   pro buf
+        ;;;
+        ;;; 就可以分别匹配不同部分。
+        ;;;
+        ;;; 核心思想：
+        ;;;   输入多个关键词，不要求它们连续出现。
+        ;;; ------------------------------------------------------------
+
+        (use-package orderless
+          :demand t
+
+          :config
+          ;; 自定义一个 Orderless completion style。
+          ;;
+          ;; 支持：
+          ;;   initialism
+          ;;   literal
+          ;;   regexp
+          ;;
+          ;; 例如：
+          ;;   pfb
+          ;;
+          ;; 可以匹配：
+          ;;   project-find-buffer
+          ;;
+          (orderless-define-completion-style orderless+initialism
+            (orderless-matching-styles
+             '(orderless-initialism
+               orderless-literal
+               orderless-regexp)))
+
+          ;; 默认使用 Orderless。
+          (setq completion-styles '(orderless)
+
+                ;; 不使用 Emacs 默认的 category defaults。
+                completion-category-defaults nil
+
+                ;; 默认匹配方式：
+                ;;   literal
+                ;;   regexp
+                orderless-matching-styles
+                '(orderless-literal
+                  orderless-regexp)
+
+                ;; 文件路径使用 partial-completion。
+                ;;
+                ;; 例如：
+                ;;   ~/pro/src
+                ;;
+                ;; 可以进行目录层级补全。
+                completion-category-overrides
+                '((file (styles partial-completion)))))
+
+
+        ;;; ------------------------------------------------------------
+        ;;; wgrep
+        ;;; ------------------------------------------------------------
+        ;;; wgrep：
+        ;;;   让 grep / ripgrep 的搜索结果可以直接编辑。
+        ;;;
+        ;;; 例如：
+        ;;;
+        ;;;   consult-ripgrep
+        ;;;          ↓
+        ;;;   找到 20 个结果
+        ;;;          ↓
+        ;;;   进入 grep buffer
+        ;;;          ↓
+        ;;;   修改内容
+        ;;;          ↓
+        ;;;   wgrep 保存修改
+        ;;;
+        ;;; 非常适合批量修改代码。
+        ;;; ------------------------------------------------------------
+
+        (use-package wgrep
+          :after consult
+
+          :hook
+          ;; 进入 grep-mode 时启用 wgrep。
+          (grep-mode . wgrep-setup))
+
+
+        ;;; ------------------------------------------------------------
+        ;;; Consult
+        ;;; ------------------------------------------------------------
+        ;;; Consult：
+        ;;;   提供大量增强版的搜索 / 选择命令。
+        ;;;
+        ;;; 常用：
+        ;;;
+        ;;;   C-s       当前 buffer 搜索
+        ;;;   C-M-l     imenu 搜索
+        ;;;   C-x C-b   Buffer 搜索
+        ;;;   C-r       Minibuffer 历史搜索
+        ;;;
+        ;;; ------------------------------------------------------------
+
+        (use-package consult
+          :demand t
+
+          :bind
+          (;; C-s：搜索当前 Buffer
+           ("C-s" . consult-line)
+
+           ;; C-M-l：通过 Imenu 搜索函数、变量、章节等
+           ("C-M-l" . consult-imenu)
+
+           ;; C-x C-b：Buffer 切换
+           ("C-x C-b" . consult-buffer)
+
+           :map minibuffer-local-map
+
+           ;; C-r：搜索 Minibuffer 历史
+           ("C-r" . consult-history))
+
+          :custom
+          ;; Consult 项目搜索时使用自己的项目根目录函数。
+          (consult-project-root-function #'dh/get-project-root)
+
+          ;; 将 Emacs 默认的 completion-at-point
+          ;; 替换成 Consult 的 completion UI。
+          (completion-in-region-function
+           #'consult-completion-in-region)
+
+          :config
+          ;; 获取当前项目根目录。
+          ;;
+          ;; 如果安装了 Projectile：
+          ;;   使用 projectile-project-root
+          ;;
+          ;; 否则返回 nil。
+         (defun dh/get-project-root ()
+           (when-let ((project (project-current)))
+    	 (project-root project))))
+
+
+        ;;; ------------------------------------------------------------
+        ;;; Consult-dir
+        ;;; ------------------------------------------------------------
+        ;;; Consult-dir：
+        ;;;   在 Minibuffer 中快速切换目录。
+        ;;;
+        ;;; 常用：
+        ;;;
+        ;;;   C-x C-d
+        ;;;       打开目录选择
+        ;;;
+        ;;;   C-x C-j
+        ;;;       跳转到文件
+        ;;; ------------------------------------------------------------
+
+        (use-package consult-dir
+          :bind
+          (;; 全局：
+           ;; C-x C-d：选择 / 切换目录
+           ("C-x C-d" . consult-dir)
+
+           :map vertico-map
+
+           ;; 在 Vertico 中：
+           ;; C-x C-d：选择目录
+           ("C-x C-d" . consult-dir)
+
+           ;; C-x C-j：跳转到目录中的文件
+           ("C-x C-j" . consult-dir-jump-file))
+
+          :custom
+          ;; 不额外使用项目目录列表。
+          (consult-dir-project-list-function nil))
+
+
+        ;;; ------------------------------------------------------------
+        ;;; Marginalia
+        ;;; ------------------------------------------------------------
+        ;;; Marginalia：
+        ;;;   给 Vertico / Minibuffer 候选项增加额外信息。
+        ;;;
+        ;;; 例如：
+        ;;;
+        ;;;   main.go       Go source file
+        ;;;   README.md     Markdown file
+        ;;;   config.org    Org file
+        ;;;
+        ;;; 或者显示：
+        ;;;   文件权限
+        ;;;   文件大小
+        ;;;   Git 信息
+        ;;;   命令说明
+        ;;;   Buffer mode
+        ;;; ------------------------------------------------------------
+
+        (use-package marginalia
+          :after vertico
+
+          :custom
+          ;; 使用较丰富的 annotation。
+          (marginalia-annotators
+           '(marginalia-annotators-heavy
+             marginalia-annotators-light
+             nil))
+
+          :config
+          ;; 开启 Marginalia。
+          (marginalia-mode))
+
+
+        ;;; ------------------------------------------------------------
+        ;;; Embark
+        ;;; ------------------------------------------------------------
+        ;;; Embark：
+        ;;;   对当前选中的候选项执行上下文相关操作。
+        ;;;
+        ;;; 例如：
+        ;;;
+        ;;;   consult-buffer
+        ;;;        ↓
+        ;;;   选中 README.md
+        ;;;        ↓
+        ;;;   C-.
+        ;;;        ↓
+        ;;;   Embark actions
+        ;;;
+        ;;; 可以出现：
+        ;;;
+        ;;;   Open
+        ;;;   Rename
+        ;;;   Delete
+        ;;;   Copy
+        ;;;   Dired
+        ;;;   ...
+        ;;;
+        ;;; ------------------------------------------------------------
+
+        (use-package embark
+          :after vertico
+
+          :bind
+          (;; C-.：
+           ;; 对当前对象执行 Embark Action。
+           ;;
+           ;; 例如：
+           ;;   Buffer
+           ;;   File
+           ;;   Symbol
+           ;;   URL
+           ;;   Region
+           ("C-." . embark-act)
+
+           ;; M-.：
+           ;; 执行当前候选项的默认动作。
+           ("M-." . embark-dwim)
+
+           :map minibuffer-local-map
+
+           ;; C-d：
+           ;; 在 Minibuffer 中执行 Embark Action。
+           ("C-d" . embark-act)
+
+           :map embark-region-map
+
+           ;; D：
+           ;; 对选中的 region 执行 Denote 操作。
+           ;;
+           ;; 需要 Denote 已安装并提供 denote-region。
+           ("D" . denote-region))
+
+          :config
+          ;; 删除默认的 mixed indicator。
+          (delete #'embark-mixed-indicator
+                  embark-indicators)
+
+          ;; 使用更加简洁的 indicator。
+          (add-to-list 'embark-indicators
+                       'embark-minimal-indicator)
+
+          ;; 让 C-h / ? 等前缀帮助使用 Embark。
+          (setq prefix-help-command
+                #'embark-prefix-help-command))
+
+
+        ;;; ------------------------------------------------------------
+        ;;; Embark + Consult
+        ;;; ------------------------------------------------------------
+        ;;; 让 Embark 更好地理解 Consult 的候选项。
+        ;;; ------------------------------------------------------------
+
+        (use-package embark-consult
+          :ensure t
+          :after embark)
+  #+end_src
+
+- Basic Settings
+
+  #+begin_src emacs-lisp :tangle ~/.config/emacs/init.el :mkdirp yes
+  ;; repeat command
+(repeat-mode 1)
+
+;; mode-line 显示列号
+(column-number-mode)
+
+;; 相对行号
+(setq display-line-numbers-type 'relative)
+
+;; 代码/文本/配置文件开启行号
+(dolist (mode '(text-mode-hook
+                prog-mode-hook
+                conf-mode-hook))
+  (add-hook mode #'display-line-numbers-mode))
+
+;; 大文件不提示
+(setq large-file-warning-threshold nil)
+
+;; VC 跟随软链接
+(setq vc-follow-symlinks t)
+
+;; Advice 重定义不提示
+(setq ad-redefinition-action 'accept)
+  #+end_src
+
+- Workspace Configuration
+  
+  #+begin_src emacs-lisp :tangle ~/.config/emacs/init.el :mkdirp yes
+  (use-package beframe
+  :ensure t
+  :init
+  (beframe-mode))
+
+;; Buffer switching
+;;
+;; C-x b   -> switch-to-buffer
+;; C-x C-b -> consult-buffer
+;; C-M-j   -> beframe-switch-buffer
+
+(global-set-key (kbd "C-x C-b") #'consult-buffer)
+(global-set-key (kbd "C-M-j") #'beframe-switch-buffer)
+
+
+(defun dw/set-tab-bar-faces ()
+  (set-face-attribute 'tab-bar-tab nil
+                      :foreground "white"
+                      :background nil
+                      :weight 'semi-bold
+                      :inherit nil)
+
+  (set-face-attribute 'tab-bar nil
+                      :font "JetBrains Mono"
+                      :foreground "white"
+                      :inherit 'mode-line))
+
+
+(setq tab-bar-close-button-show nil
+      tab-bar-auto-width nil
+      tab-bar-format
+      '(tab-bar-format-menu-bar
+        dw/exwm-workspace-icon
+        tab-bar-format-history
+        tab-bar-format-tabs-groups
+        tab-bar-separator
+        dw/tmr-mode-line
+        tab-bar-separator
+        tab-bar-format-align-right
+        tab-bar-format-global))
+
+
+(defun dw/setup-tab-bar-mode ()
+  (dw/set-tab-bar-faces)
+
+  (add-to-list 'global-mode-string '(" " display-time-string))
+
+  (setq tab-bar-show t)
+
+  (tab-bar-mode 1)
+
+  (tab-bar-rename-tab "Main"))
+  #+end_src
+
+- Org Mode Configuration
+      
+    #+begin_src emacs-lisp :tangle ~/.config/emacs/modules/dh-workflow.el :mkdirp yes
+      (use-package org-tempo
+        :ensure nil
+        :after org
+        :config
+        (dolist (item '(("sh" . "src sh")
+                        ("el" . "src emacs-lisp")
+                        ("li" . "src lisp")
+                        ("sc" . "src scheme")
+                        ("ts" . "src typescript")
+                        ("py" . "src python")
+                        ("go" . "src go")
+                        ("yaml" . "src yaml")
+                        ("json" . "src json")
+                        ("einit" . "src emacs-lisp :tangle ~/.config/emacs/init.el :mkdirp yes")
+                        ("emodule" . "src emacs-lisp :tangle ~/.config/emacs/modules/dh-MODULE.el :mkdirp yes")))
+                        (add-to-list 'org-structure-template-alist item)))
+
+      (provide 'dh-workflow)
+  #+end_src
+
+- Development Configuration
+
+  #+begin_src emacs-lisp :tangle ~/.config/emacs/modules/dh-rust.el :mkdirp yes
+    (use-package rust-ts-mode
+          :ensure nil
+          :mode "\\.rs\\'")
+
+    (provide 'dh-rust)
+  #+end_src
+
+  #+begin_src emacs-lisp :tangle ~/.config/emacs/modules/dh-lsp-bridge.el :mkdirp yes
+                ;;; dh-lsp-bridge.el --- lsp-bridge configuration
+            ;;; Commentary:
+            ;;; lsp-bridge + rust-analyzer configuration
+            ;;; ------------------------------------------------------------
+
+
+            ;;; ------------------------------------------------------------
+            ;;; Load lsp-bridge
+            ;;; ------------------------------------------------------------
+
+            ;; lsp-bridge 源码目录
+            ;; 不通过 package.el 安装，直接加载源码
+
+            (add-to-list 'load-path
+                         "~/.config/emacs/lsp-bridge")
+
+
+            (require 'lsp-bridge)
+
+
+
+            ;;; ------------------------------------------------------------
+            ;;; LSP 基础配置
+            ;;; ------------------------------------------------------------
+
+            ;; 开启诊断
+            ;; Rust 类型错误、语法错误实时显示
+
+            (setq lsp-bridge-enable-diagnostics t)
+
+
+
+            ;; 开启 Rust 类型嵌入提示
+            ;;
+            ;; 示例:
+            ;;
+            ;; let name = "hello";
+            ;;
+            ;; 显示:
+            ;;
+            ;; name: &str
+
+            (setq lsp-bridge-enable-inlay-hint t)
+
+
+
+            ;; 函数参数提示
+            ;;
+            ;; 调用:
+            ;;
+            ;; Vec::push(
+            ;;
+            ;; 显示参数信息
+
+            (setq lsp-bridge-enable-signature-help t)
+
+
+
+            ;; 光标移动到错误位置显示诊断
+
+            (setq lsp-bridge-enable-hover-diagnostic t)
+
+
+
+            ;; 诊断延迟
+            ;;
+            ;; 停止输入 0.3 秒后刷新
+
+            (setq lsp-bridge-diagnostic-fetch-idle 0.3)
+
+
+
+            ;; 自动格式化
+            ;;
+            ;; Rust:
+            ;; rustfmt
+
+            (setq lsp-bridge-enable-auto-format-code t)
+
+
+
+            ;; 文档符号高亮
+            ;;
+            ;; Rust 大型项目可能比较消耗性能
+            ;; 默认关闭
+
+            (setq lsp-bridge-enable-document-highlight nil)
+
+
+
+
+            ;;; ------------------------------------------------------------
+            ;;; ACM 补全配置
+            ;;; ------------------------------------------------------------
+
+
+            ;; 显示补全文档
+
+            (setq acm-enable-doc t)
+
+
+
+            ;; Markdown 文档异步渲染
+
+            (setq acm-enable-doc-markdown-render
+                  'async)
+
+
+
+            ;; 开启候选预览
+
+            (setq acm-enable-preview t)
+
+
+
+            ;; 自动 import
+
+            (setq acm-backend-lsp-enable-auto-import t)
+
+
+
+            ;; LSP 候选立即触发
+
+            (setq acm-backend-lsp-candidate-min-length 0)
+
+            ;; 禁用 lsp-bridge ACM 的 yasnippet snippet
+            (setq acm-enable-yas nil)
+
+            ;; 禁用 AI 补全
+
+            (setq acm-enable-tabnine nil)
+
+            (setq acm-enable-codeium nil)
+
+            (setq acm-enable-copilot nil)
+
+
+
+
+
+            ;;; ------------------------------------------------------------
+            ;;; ACM 快捷键
+            ;;; ------------------------------------------------------------
+
+            (with-eval-after-load 'acm
+
+              (define-key acm-mode-map
+                          (kbd "C-j")
+                          #'acm-select-next)
+
+              (define-key acm-mode-map
+                          (kbd "C-k")
+                          #'acm-select-prev)
+            )
+
+            (with-eval-after-load 'lsp-bridge
+
+              (define-key lsp-bridge-mode-map
+                          (kbd "M-.")
+                          #'lsp-bridge-find-def)
+
+              (define-key lsp-bridge-mode-map
+                          (kbd "M-,")
+                          #'lsp-bridge-find-def-return)
+
+              (define-key lsp-bridge-mode-map
+                          (kbd "M-r")
+                          #'lsp-bridge-find-references)
+
+              (define-key lsp-bridge-mode-map
+                          (kbd "C-c d")
+                          #'lsp-bridge-popup-documentation)
+              )
+
+           (defun dh/rust-mode-setup ()
+            "Rust development environment."
+
+             ;; lsp-bridge
+    	    (lsp-bridge-mode)
+
+             ;; (), {}, [], "" 自动补全
+            (electric-pair-local-mode))
+
+
+              (add-hook 'rust-ts-mode-hook
+              #'dh/rust-mode-setup)
+
+
+            ;;; ------------------------------------------------------------
+            ;;; 提供模块
+            ;;; ------------------------------------------------------------
+
+            (provide 'dh-lsp-bridge)
+
+
+            ;;; dh-lsp-bridge.el ends here
+  #+end_src
+
+- User-defined function
+  #+begin_src emacs-lisp :tangle ~/.config/emacs/modules/dh-func.el :mkdirp yes
+        (defun dh/duplicate-line ()
+      "Duplicate current line and keep cursor column."
+      (interactive)
+      (let ((col (current-column))
+            (line (thing-at-point 'line t)))
+        (save-excursion
+          (end-of-line)
+          (insert "\n" line))
+        (forward-line 1)
+        (move-to-column col)))
+
+    (global-set-key (kbd "C-,")
+                    #'dh/duplicate-line)
+
+    (provide 'dh-func)
+  #+end_src
