@@ -67,50 +67,28 @@ Emacs is cental to my cpmputing wirkflow
 - Keeping the Emacs Folder Clean
 
   #+begin_src emacs-lisp :tangle ~/.config/emacs/init.el
-  (use-package no-littering
-   :demand t
-   :config
+     (use-package no-littering
+       :demand t
+       :config
+    (setq custom-file
+          (no-littering-expand-etc-file-name "custom.el"))
 
-   ;; ========================================
-   ;; Custom
-   ;; ========================================
+    (when (file-exists-p custom-file)
+      (load custom-file t))
 
-   ;; 将 Customize 自动生成的配置保存到：
-   ;; ~/.config/emacs/etc/custom.el
-   (setq custom-file
-         (no-littering-expand-etc-file-name "custom.el"))
+    (let ((backup-dir
+           (no-littering-expand-var-file-name "backup/")))
+      (make-directory backup-dir t)
+      (setq backup-directory-alist
+            `(("." . ,backup-dir))))
 
-   ;; 如果 custom.el 存在，则加载它
-   (when (file-exists-p custom-file)
-     (load custom-file t))
+    (let ((auto-save-dir
+           (no-littering-expand-var-file-name "auto-save/")))
+      (make-directory auto-save-dir t)
+      (setq auto-save-file-name-transforms
+            `((".*" ,auto-save-dir t))))
 
-
-   ;; ========================================
-   ;; Backup
-   ;; ========================================
-
-   ;; Backup 文件统一保存到：
-   ;; ~/.config/emacs/var/backup/
-   (let ((backup-dir
-          (no-littering-expand-var-file-name "backup/")))
-     (make-directory backup-dir t)
-
-     (setq backup-directory-alist
-           `(("." . ,backup-dir))))
-
-
-   ;; ========================================
-   ;; Auto-save
-   ;; ========================================
-
-   ;; Auto-save 文件统一保存到：
-   ;; ~/.config/emacs/var/auto-save/
-   (let ((auto-save-dir
-          (no-littering-expand-var-file-name "auto-save/")))
-     (make-directory auto-save-dir t)
-
-     (setq auto-save-file-name-transforms
-           `((".*" ,auto-save-dir t)))))
+    (setq auto-save-default t))
   #+end_src
 
 - Native Compliation Configuration
@@ -650,12 +628,6 @@ Emacs is cental to my cpmputing wirkflow
   :init
   (beframe-mode))
 
-;; Buffer switching
-;;
-;; C-x b   -> switch-to-buffer
-;; C-x C-b -> consult-buffer
-;; C-M-j   -> beframe-switch-buffer
-
 (global-set-key (kbd "C-x C-b") #'consult-buffer)
 (global-set-key (kbd "C-M-j") #'beframe-switch-buffer)
 
@@ -733,202 +705,92 @@ Emacs is cental to my cpmputing wirkflow
   #+end_src
 
   #+begin_src emacs-lisp :tangle ~/.config/emacs/modules/dh-lsp-bridge.el :mkdirp yes
-                ;;; dh-lsp-bridge.el --- lsp-bridge configuration
-            ;;; Commentary:
-            ;;; lsp-bridge + rust-analyzer configuration
-            ;;; ------------------------------------------------------------
-
-
-            ;;; ------------------------------------------------------------
-            ;;; Load lsp-bridge
-            ;;; ------------------------------------------------------------
-
-            ;; lsp-bridge 源码目录
-            ;; 不通过 package.el 安装，直接加载源码
-
-            (add-to-list 'load-path
-                         "~/.config/emacs/lsp-bridge")
-
-
-            (require 'lsp-bridge)
-
-
-
-            ;;; ------------------------------------------------------------
-            ;;; LSP 基础配置
-            ;;; ------------------------------------------------------------
-
-            ;; 开启诊断
-            ;; Rust 类型错误、语法错误实时显示
-
-            (setq lsp-bridge-enable-diagnostics t)
-
-
-
-            ;; 开启 Rust 类型嵌入提示
-            ;;
-            ;; 示例:
-            ;;
-            ;; let name = "hello";
-            ;;
-            ;; 显示:
-            ;;
-            ;; name: &str
-
-            (setq lsp-bridge-enable-inlay-hint t)
-
-
-
-            ;; 函数参数提示
-            ;;
-            ;; 调用:
-            ;;
-            ;; Vec::push(
-            ;;
-            ;; 显示参数信息
-
-            (setq lsp-bridge-enable-signature-help t)
-
-
-
-            ;; 光标移动到错误位置显示诊断
-
-            (setq lsp-bridge-enable-hover-diagnostic t)
-
-
-
-            ;; 诊断延迟
-            ;;
-            ;; 停止输入 0.3 秒后刷新
-
-            (setq lsp-bridge-diagnostic-fetch-idle 0.3)
-
-
-
-            ;; 自动格式化
-            ;;
-            ;; Rust:
-            ;; rustfmt
-
-            (setq lsp-bridge-enable-auto-format-code t)
-
-
-
-            ;; 文档符号高亮
-            ;;
-            ;; Rust 大型项目可能比较消耗性能
-            ;; 默认关闭
-
-            (setq lsp-bridge-enable-document-highlight nil)
-
-
-
-
-            ;;; ------------------------------------------------------------
-            ;;; ACM 补全配置
-            ;;; ------------------------------------------------------------
-
-
-            ;; 显示补全文档
-
-            (setq acm-enable-doc t)
-
-
-
-            ;; Markdown 文档异步渲染
-
-            (setq acm-enable-doc-markdown-render
-                  'async)
-
-
-
-            ;; 开启候选预览
-
-            (setq acm-enable-preview t)
-
-
-
-            ;; 自动 import
-
-            (setq acm-backend-lsp-enable-auto-import t)
-
-
-
-            ;; LSP 候选立即触发
-
-            (setq acm-backend-lsp-candidate-min-length 0)
-
-            ;; 禁用 lsp-bridge ACM 的 yasnippet snippet
-            (setq acm-enable-yas nil)
-
-            ;; 禁用 AI 补全
-
-            (setq acm-enable-tabnine nil)
-
-            (setq acm-enable-codeium nil)
-
-            (setq acm-enable-copilot nil)
-
-
-
-
-
-            ;;; ------------------------------------------------------------
-            ;;; ACM 快捷键
-            ;;; ------------------------------------------------------------
-
-            (with-eval-after-load 'acm
-
-              (define-key acm-mode-map
-                          (kbd "C-j")
-                          #'acm-select-next)
-
-              (define-key acm-mode-map
-                          (kbd "C-k")
-                          #'acm-select-prev)
-            )
-
-            (with-eval-after-load 'lsp-bridge
-
-              (define-key lsp-bridge-mode-map
-                          (kbd "M-.")
-                          #'lsp-bridge-find-def)
-
-              (define-key lsp-bridge-mode-map
-                          (kbd "M-,")
-                          #'lsp-bridge-find-def-return)
-
-              (define-key lsp-bridge-mode-map
-                          (kbd "M-r")
-                          #'lsp-bridge-find-references)
-
-              (define-key lsp-bridge-mode-map
-                          (kbd "C-c d")
-                          #'lsp-bridge-popup-documentation)
-              )
-
-           (defun dh/rust-mode-setup ()
-            "Rust development environment."
-
-             ;; lsp-bridge
-    	    (lsp-bridge-mode)
-
-             ;; (), {}, [], "" 自动补全
-            (electric-pair-local-mode))
-
-
-              (add-hook 'rust-ts-mode-hook
-              #'dh/rust-mode-setup)
-
-
-            ;;; ------------------------------------------------------------
-            ;;; 提供模块
-            ;;; ------------------------------------------------------------
-
-            (provide 'dh-lsp-bridge)
-
-
-            ;;; dh-lsp-bridge.el ends here
+                (add-to-list 'load-path
+                 "~/.config/emacs/lsp-bridge")
+
+    (require 'lsp-bridge)
+
+    (setq lsp-bridge-disable-backup nil
+          lsp-bridge-enable-diagnostics t
+          lsp-bridge-enable-inlay-hint t
+          lsp-bridge-enable-signature-help t
+          lsp-bridge-enable-hover-diagnostic t
+          lsp-bridge-diagnostic-fetch-idle 0.3
+          lsp-bridge-enable-auto-format-code nil
+          lsp-bridge-enable-document-highlight nil)
+
+    (setq acm-enable-doc t
+          acm-enable-doc-markdown-render 'async
+          acm-enable-preview t
+          acm-backend-lsp-enable-auto-import t
+          acm-backend-lsp-candidate-min-length 0
+          acm-enable-yas t
+          acm-enable-tabnine nil
+          acm-enable-codeium nil
+          acm-enable-copilot nil)
+
+    (use-package yasnippet
+      :ensure t
+      :config
+      (yas-global-mode 1)
+
+      (define-key yas-keymap
+                  (kbd "TAB")
+                  #'yas-next-field-or-maybe-expand)
+
+      (define-key yas-keymap
+                  (kbd "<backtab>")
+                  #'yas-prev-field))
+
+    (with-eval-after-load 'acm
+      (define-key acm-mode-map
+                  (kbd "C-j")
+                  #'acm-select-next)
+
+      (define-key acm-mode-map
+                  (kbd "C-k")
+    	      #'acm-select-prev))
+
+    (with-eval-after-load 'lsp-bridge
+      (define-key lsp-bridge-mode-map
+                  (kbd "M-.")
+                  #'lsp-bridge-find-def)
+
+      (define-key lsp-bridge-mode-map
+                  (kbd "M-,")
+                  #'lsp-bridge-find-def-return)
+
+      (define-key lsp-bridge-mode-map
+                  (kbd "M-r")
+                  #'lsp-bridge-find-references)
+
+      (define-key lsp-bridge-mode-map
+                  (kbd "C-c d")
+                  #'lsp-bridge-popup-documentation)
+      (define-key lsp-bridge-mode-map
+            (kbd "C-c a")
+            #'lsp-bridge-code-action)
+      (define-key lsp-bridge-mode-map
+              (kbd "C-c f")
+              #'lsp-bridge-code-format))
+
+        (defun dh/rust-mode-setup ()
+         "Rust development environment."
+
+          ;; lsp-bridge
+         (lsp-bridge-mode)
+
+          ;; (), {}, [], "" 自动补全
+         (electric-pair-local-mode))
+
+
+           (add-hook 'rust-ts-mode-hook
+           #'dh/rust-mode-setup)
+
+         (provide 'dh-lsp-bridge)
+
+
+         ;;; dh-lsp-bridge.el ends here
   #+end_src
 
 - User-defined function
