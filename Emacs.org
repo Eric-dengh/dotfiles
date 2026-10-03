@@ -740,7 +740,8 @@ Emacs is cental to my cpmputing wirkflow
 
       (define-key yas-keymap
                   (kbd "<backtab>")
-                  #'yas-prev-field))
+                  #'yas-prev-field)
+      (define-key yas-keymap (kbd "S-<iso-lefttab>") #'yas-prev-field))
 
     (with-eval-after-load 'acm
       (define-key acm-mode-map
@@ -808,6 +809,12 @@ Emacs is cental to my cpmputing wirkflow
 
     (global-set-key (kbd "C-,")
                     #'dh/duplicate-line)
+
+    (use-package move-text
+       :ensure t
+       :bind
+        (("M-<up>" . move-text-up)
+        ("M-<down>" . move-text-down)))
 
     (provide 'dh-func)
   #+end_src
